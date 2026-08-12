@@ -1,0 +1,22 @@
+name: DeepSeek Code Review on PR
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Required to get all commit history for the diff
+
+      - name: Run DeepSeek Code Review
+        uses: BitPulse10/deepseek-code-review@v1
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+          head: ${{ github.event.pull_request.head.sha }}
+          api-key: ${{ secrets.sk-e2e96fd2142b44de99b8a3b396e5894d }}
+          language: "en"
