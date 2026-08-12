@@ -1,0 +1,16 @@
+Step 1: Create Project
+bash
+mkdir url-explainer-ultimate
+cd url-explainer-ultimate
+Step 2: Save All Files
+Copy each file from above into the project folder.
+
+Step 3: Install
+bash
+npm install
+Step 4: Start
+bash
+npm start
+Step 5: Open Browser
+text
+http://localhost:3000
