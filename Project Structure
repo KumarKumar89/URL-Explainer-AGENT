@@ -1,0 +1,14 @@
+url-explainer/
+├── .env.example
+├── .gitignore
+├── package.json
+├── server.js
+├── public/
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
+└── src/
+    ├── search-service.js
+    ├── content-processor.js
+    ├── image-extractor.js
+    └── video-extractor.js
