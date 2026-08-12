@@ -6,12 +6,14 @@
 const { ContentResearchAgent } = require('./content-research-agent');
 const { ContentStructuringAgent } = require('./content-structuring-agent');
 const { VisualizationAgent } = require('./visualization-agent');
+const { HtmlGuideBuilder } = require('../html-guide-builder');
 
 class AgentOrchestrator {
   constructor() {
     this.researchAgent = new ContentResearchAgent();
     this.structuringAgent = new ContentStructuringAgent();
     this.visualizationAgent = new VisualizationAgent();
+    this.htmlBuilder = new HtmlGuideBuilder();
     
     this.metrics = {
       totalRequests: 0,
@@ -85,7 +87,7 @@ class AgentOrchestrator {
         research: {
           content: researchResult.content,
           sourceCount: researchResult.sourceCount,
-          sources: researchResult.sources || []
+          sources: researchResult.sources || []  // Forward source records with confidence from research agent
         },
         structuredContent: structuringResult.structuredContent,
         visualizations: visualizationResult,
@@ -98,6 +100,9 @@ class AgentOrchestrator {
       this.updateAverageTime(Date.now() - startTime);
 
       console.log(`✅ Agent Orchestrator: Completed in ${finalResult.metadata.processingTime}ms`);
+      
+      // Generate HTML guide output
+      finalResult.htmlGuide = this.htmlBuilder.generate(finalResult);
       
       return finalResult;
 
