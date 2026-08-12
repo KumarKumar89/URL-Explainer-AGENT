@@ -6,8 +6,8 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-// Default timeout for all axios requests (5 seconds)
-const AXIOS_TIMEOUT = 5000;
+// Default timeout for all axios requests (10 seconds)
+const AXIOS_TIMEOUT = 10000;
 
 class ContentResearchAgent {
   constructor() {
@@ -20,7 +20,9 @@ class ContentResearchAgent {
   }
 
   /**
-   * Main research method - orchestrates multi-source research
+   * Main research method - orchestrates multi-source research with deep content gathering
+   * @param {string} topic - The topic to research
+   * @returns {Promise<Object>} Research results with content, sources, and metadata
    */
   async research(topic) {
     console.log(`🔍 Content Research Agent: Researching "${topic}"...`);
@@ -44,13 +46,23 @@ class ContentResearchAgent {
       success: contributingSources.length > 0,
       content: aggregatedContent,
       sourceCount: contributingSources.length,
-      sources: contributingSources,
+      sources: contributingSources.map(s => ({
+        source: s.source,
+        content: s.content,
+        confidence: s.confidence,
+        timestamp: new Date().toISOString()
+      })),
       timestamp: new Date().toISOString()
     };
   }
 
   /**
    * Execute a research task with retry logic
+   * Distinguishes between failures and empty results.
+   * Transport errors propagate with backoff retry; null/empty search results are terminal.
+   * @param {Function} task - The task to execute
+   * @param {number} retries - Number of retry attempts
+   * @returns {Promise<any>} Task result or null for terminal empty results
    */
   async executeWithRetry(task, retries = this.maxRetries) {
     let lastError = null;
@@ -58,8 +70,8 @@ class ContentResearchAgent {
     for (let i = 0; i <= retries; i++) {
       try {
         const result = await task();
-        // Empty result is terminal - don't retry
-        if (result === null || result === undefined) {
+        // Empty/null result is terminal - don't retry (search returned nothing, not an error)
+        if (result === null || result === undefined || (result.content === null) || (result.content && result.content.trim().length === 0)) {
           return null;
         }
         return result;
@@ -67,7 +79,7 @@ class ContentResearchAgent {
         lastError = error;
         console.warn(`Task failed (attempt ${i + 1}/${retries + 1}):`, error.message);
         
-        // Only retry on actual errors, not empty results
+        // Only retry on actual transport/network errors, not empty results
         if (i === retries) {
           throw error;
         }
