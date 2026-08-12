@@ -6,10 +6,17 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
+// Default timeout for all axios requests (5 seconds)
+const AXIOS_TIMEOUT = 5000;
+
 class ContentResearchAgent {
   constructor() {
     this.sources = ['Wikipedia', 'DuckDuckGo', 'WebScraper'];
     this.maxRetries = 2;
+    this.axiosConfig = {
+      timeout: AXIOS_TIMEOUT,
+      headers: { 'User-Agent': 'EduExplainer-ResearchAgent/1.0' }
+    };
   }
 
   /**
@@ -28,12 +35,16 @@ class ContentResearchAgent {
       researchTasks.map(task => this.executeWithRetry(task))
     );
 
-    const aggregatedContent = this.aggregateResults(results);
+    const { aggregatedContent, sources } = this.aggregateResults(results);
+    
+    // Only count sources that contributed non-empty content
+    const contributingSources = sources.filter(s => s && s.content && s.content.trim().length > 0);
     
     return {
-      success: aggregatedContent.length > 0,
+      success: contributingSources.length > 0,
       content: aggregatedContent,
-      sourceCount: results.filter(r => r.status === 'fulfilled' && r.value).length,
+      sourceCount: contributingSources.length,
+      sources: contributingSources,
       timestamp: new Date().toISOString()
     };
   }
@@ -42,15 +53,33 @@ class ContentResearchAgent {
    * Execute a research task with retry logic
    */
   async executeWithRetry(task, retries = this.maxRetries) {
+    let lastError = null;
+    
     for (let i = 0; i <= retries; i++) {
       try {
         const result = await task();
-        if (result) return result;
+        // Empty result is terminal - don't retry
+        if (result === null || result === undefined) {
+          return null;
+        }
+        return result;
       } catch (error) {
+        lastError = error;
         console.warn(`Task failed (attempt ${i + 1}/${retries + 1}):`, error.message);
-        if (i === retries) throw error;
+        
+        // Only retry on actual errors, not empty results
+        if (i === retries) {
+          throw error;
+        }
+        
+        // Exponential backoff for retries
         await this.delay(1000 * (i + 1));
       }
+    }
+    
+    // Should not reach here, but handle gracefully
+    if (lastError) {
+      throw lastError;
     }
     return null;
   }
@@ -61,18 +90,14 @@ class ContentResearchAgent {
   async searchWikipedia(topic) {
     try {
       const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&srlimit=1`;
-      const searchResponse = await axios.get(searchUrl, {
-        headers: { 'User-Agent': 'EduExplainer-ResearchAgent/1.0' }
-      });
+      const searchResponse = await axios.get(searchUrl, this.axiosConfig);
 
       const pages = searchResponse.data.query.search;
       if (!pages || pages.length === 0) return null;
 
       const pageId = pages[0].pageid;
       const contentUrl = `https://en.wikipedia.org/w/api.php?action=parse&pageid=${pageId}&format=json&prop=text|categories`;
-      const contentResponse = await axios.get(contentUrl, {
-        headers: { 'User-Agent': 'EduExplainer-ResearchAgent/1.0' }
-      });
+      const contentResponse = await axios.get(contentUrl, this.axiosConfig);
 
       const html = contentResponse.data.parse.text['*'];
       const $ = cheerio.load(html);
@@ -112,7 +137,7 @@ class ContentResearchAgent {
   async searchDuckDuckGo(topic) {
     try {
       const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(topic)}&format=json&no_html=1&skip_disambig=1`;
-      const response = await axios.get(url);
+      const response = await axios.get(url, this.axiosConfig);
       const data = response.data;
 
       let content = '';
@@ -152,7 +177,11 @@ class ContentResearchAgent {
       // Use DuckDuckGo HTML search as fallback
       const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(topic)}`;
       const response = await axios.get(searchUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0' }
+        ...this.axiosConfig,
+        headers: { 
+          ...this.axiosConfig.headers,
+          'User-Agent': 'Mozilla/5.0' 
+        }
       });
 
       const $ = cheerio.load(response.data);
@@ -187,6 +216,8 @@ class ContentResearchAgent {
    */
   aggregateResults(results) {
     let aggregatedContent = '';
+    const sources = [];
+    
     const successfulResults = results
       .filter(r => r.status === 'fulfilled' && r.value !== null)
       .map(r => r.value);
@@ -195,12 +226,13 @@ class ContentResearchAgent {
     successfulResults.sort((a, b) => b.confidence - a.confidence);
 
     successfulResults.forEach(result => {
-      if (result.content) {
+      if (result.content && result.content.trim().length > 0) {
         aggregatedContent += `【Source: ${result.source}】\n${result.content}\n\n`;
+        sources.push(result);
       }
     });
 
-    return aggregatedContent;
+    return { aggregatedContent, sources };
   }
 
   /**

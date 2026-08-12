@@ -80,7 +80,7 @@ class AgentOrchestrator {
         metadata: {
           processingTime: Date.now() - startTime,
           timestamp: new Date().toISOString(),
-          version: '2.1-agents-with-algorithm-support'
+          version: '2.2-coderabbit-fixes'
         },
         research: {
           content: researchResult.content,
@@ -141,9 +141,19 @@ class AgentOrchestrator {
    * Calculate overall quality score
    */
   calculateQualityScore(research, structuring, visualization) {
+    // Calculate source quality based on actual contributing sources with confidence
+    let sourceQuality = 0;
+    if (research.sources && research.sources.length > 0) {
+      // Weight by confidence scores
+      const totalConfidence = research.sources.reduce((sum, s) => sum + (s.confidence || 0), 0);
+      sourceQuality = Math.min(100, Math.round(totalConfidence * 30));
+    } else if (research.sourceCount > 0) {
+      sourceQuality = Math.min(100, research.sourceCount * 30);
+    }
+    
     const scores = {
-      researchQuality: research.sourceCount > 0 ? Math.min(100, research.sourceCount * 30) : 0,
-      contentDepth: research.content.length > 500 ? 80 : research.content.length / 10,
+      researchQuality: sourceQuality,
+      contentDepth: research.content && research.content.length > 500 ? 80 : (research.content ? research.content.length / 10 : 0),
       structureCompleteness: structuring.structuredContent ? 90 : 50,
       visualizationRichness: visualization.charts && visualization.diagrams ? 85 : 60
     };
