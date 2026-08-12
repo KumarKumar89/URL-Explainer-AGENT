@@ -62,6 +62,17 @@ class AgentOrchestrator {
         () => this.visualizationAgent.generateVisualizations(structuringResult.structuredContent)
       );
 
+      // Phase 4: Algorithm Animation (if applicable)
+      let algorithmAnimation = null;
+      const isAlgorithmTopic = this.isAlgorithmTopic(topic);
+      if (isAlgorithmTopic) {
+        console.log(`🎬 Generating algorithm animation for: ${topic}`);
+        algorithmAnimation = await this.executeWithMetrics(
+          'algorithmAnimation',
+          () => this.algorithmAnimator.generateAlgorithmAnimation(topic, researchResult.content)
+        );
+      }
+
       // Combine all results
       const finalResult = {
         success: true,
@@ -69,7 +80,7 @@ class AgentOrchestrator {
         metadata: {
           processingTime: Date.now() - startTime,
           timestamp: new Date().toISOString(),
-          version: '2.0-agents'
+          version: '2.1-agents-with-algorithm-support'
         },
         research: {
           content: researchResult.content,
@@ -78,6 +89,8 @@ class AgentOrchestrator {
         },
         structuredContent: structuringResult.structuredContent,
         visualizations: visualizationResult,
+        algorithmAnimation: algorithmAnimation,
+        isAlgorithmTopic: isAlgorithmTopic,
         quality: this.calculateQualityScore(researchResult, structuringResult, visualizationResult)
       };
 
@@ -213,6 +226,19 @@ class AgentOrchestrator {
   }
 
   /**
+   * Check if topic is algorithm-related
+   */
+  isAlgorithmTopic(topic) {
+    const algorithmKeywords = [
+      'sort', 'search', 'algorithm', 'bfs', 'dfs', 'dijkstra',
+      'binary search', 'bubble sort', 'merge sort', 'quick sort',
+      'heap', 'tree', 'graph', 'dynamic programming', 'recursion'
+    ];
+    const topicLower = topic.toLowerCase();
+    return algorithmKeywords.some(keyword => topicLower.includes(keyword));
+  }
+
+  /**
    * Reset metrics
    */
   resetMetrics() {
@@ -223,7 +249,8 @@ class AgentOrchestrator {
       agentMetrics: {
         research: { calls: 0, success: 0, avgTime: 0 },
         structuring: { calls: 0, success: 0, avgTime: 0 },
-        visualization: { calls: 0, success: 0, avgTime: 0 }
+        visualization: { calls: 0, success: 0, avgTime: 0 },
+        algorithmAnimation: { calls: 0, success: 0, avgTime: 0 }
       }
     };
   }
