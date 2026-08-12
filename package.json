@@ -1,0 +1,26 @@
+{
+  "name": "url-explainer-ultimate",
+  "version": "2.0.0",
+  "description": "Ultimate educational tool with images, videos, charts, and interactive visualizations",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["education", "visualization", "interactive", "students"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "youtube-transcript": "^1.0.6",
+    "puppeteer": "^21.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
