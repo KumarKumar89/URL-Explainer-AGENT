@@ -1,14 +1,21 @@
+/**
+ * Image Extractor
+ * Extracts images and visual content from webpages
+ */
+
 const axios = require('axios');
 const cheerio = require('cheerio');
 
+const AXIOS_CONFIG = {
+  timeout: 10000,
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+  }
+};
+
 async function extractImagesFromUrl(url) {
   try {
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
-      timeout: 10000
-    });
+    const response = await axios.get(url, AXIOS_CONFIG);
     
     const $ = cheerio.load(response.data);
     const images = [];

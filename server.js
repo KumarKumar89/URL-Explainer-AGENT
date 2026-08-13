@@ -5,12 +5,14 @@ const { searchAndExplain } = require('./src/search-service');
 const { extractImagesFromUrl } = require('./src/image-extractor');
 const { extractVideoInfo } = require('./src/video-extractor');
 const { AgentOrchestrator } = require('./agents/orchestrator');
+const { AlgorithmAnimatorAgent } = require('./agents/algorithm-animator-agent');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Initialize the Agent Orchestrator
 const orchestrator = new AgentOrchestrator();
+const algorithmAnimator = new AlgorithmAnimatorAgent();
 
 app.use(cors());
 app.use(express.json());

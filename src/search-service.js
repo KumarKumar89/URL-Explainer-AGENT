@@ -1,13 +1,22 @@
+/**
+ * Search Service
+ * Handles web searches and content extraction for educational topics
+ */
+
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { generateEducationalContent } = require('./content-processor');
+
+const AXIOS_CONFIG = {
+  timeout: 10000,
+  headers: { 'User-Agent': 'EduExplainer-SearchService/1.0' }
+};
 
 async function searchAndExplain(topic) {
   try {
     const searchResults = await searchWeb(topic);
     const content = await extractContent(searchResults, topic);
-    const educationalContent = generateEducationalContent(topic, content);
-    return educationalContent;
+    return generateEducationalContent(topic, content);
   } catch (error) {
     console.error('Search error:', error.message);
     return generateFallbackContent(topic);
@@ -49,18 +58,14 @@ async function searchWeb(topic) {
 async function fetchWikipedia(topic) {
   try {
     const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&srlimit=1`;
-    const searchResponse = await axios.get(searchUrl, {
-      headers: { 'User-Agent': 'EducationalBot/1.0' }
-    });
+    const searchResponse = await axios.get(searchUrl, AXIOS_CONFIG);
     
     const pages = searchResponse.data.query.search;
     if (!pages || pages.length === 0) return null;
     
     const pageId = pages[0].pageid;
     const contentUrl = `https://en.wikipedia.org/w/api.php?action=parse&pageid=${pageId}&format=json&prop=text`;
-    const contentResponse = await axios.get(contentUrl, {
-      headers: { 'User-Agent': 'EducationalBot/1.0' }
-    });
+    const contentResponse = await axios.get(contentUrl, AXIOS_CONFIG);
     
     const html = contentResponse.data.parse.text['*'];
     const $ = cheerio.load(html);
@@ -83,7 +88,7 @@ async function fetchWikipedia(topic) {
 async function fetchDuckDuckGo(topic) {
   try {
     const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(topic)}&format=json&no_html=1&skip_disambig=1`;
-    const response = await axios.get(url);
+    const response = await axios.get(url, AXIOS_CONFIG);
     const data = response.data;
     
     let content = '';

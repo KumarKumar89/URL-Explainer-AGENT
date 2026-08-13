@@ -6,6 +6,7 @@
 const { ContentResearchAgent } = require('./content-research-agent');
 const { ContentStructuringAgent } = require('./content-structuring-agent');
 const { VisualizationAgent } = require('./visualization-agent');
+const { AlgorithmAnimatorAgent } = require('./algorithm-animator-agent');
 const { HtmlGuideBuilder } = require('../html-guide-builder');
 
 class AgentOrchestrator {
@@ -13,6 +14,7 @@ class AgentOrchestrator {
     this.researchAgent = new ContentResearchAgent();
     this.structuringAgent = new ContentStructuringAgent();
     this.visualizationAgent = new VisualizationAgent();
+    this.algorithmAnimator = new AlgorithmAnimatorAgent();
     this.htmlBuilder = new HtmlGuideBuilder();
     
     this.metrics = {
@@ -22,7 +24,8 @@ class AgentOrchestrator {
       agentMetrics: {
         research: { calls: 0, success: 0, avgTime: 0 },
         structuring: { calls: 0, success: 0, avgTime: 0 },
-        visualization: { calls: 0, success: 0, avgTime: 0 }
+        visualization: { calls: 0, success: 0, avgTime: 0 },
+        algorithmAnimation: { calls: 0, success: 0, avgTime: 0 }
       }
     };
   }
